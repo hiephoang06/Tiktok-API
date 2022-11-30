@@ -3,6 +3,11 @@ import CommentModel from '../models/Comment.js';
 import ProfileModel from '../models/Profile.js';
 import LikeModel from '../models/Like.js';
 import mongodb from 'mongodb';
+import ffmpeg from 'fluent-ffmpeg';
+import mongoose from 'mongoose';
+
+const videosDestination = './public/videos/';
+const gifsDestination = './public/gifs/';
 class VideoController {
   getVideos = async (req, res) => {
     const videos = await VideoModel.aggregate([
@@ -34,6 +39,7 @@ class VideoController {
       {
         $project: {
           videoUrl: 1,
+          gifUrl: 1,
           author: 1,
           likeCount: {
             $size: '$likes'
@@ -51,9 +57,26 @@ class VideoController {
 
   uploadVideo = async (req, res) => {
     const file = req.file;
+    const dateTime = Date.now() + '.gif';
     const profileId = req.user._id;
-    const result = await VideoModel.create({ videoUrl: file.filename, author: mongodb.ObjectId(profileId) });
-    res.json(result);
+    if (file.mimetype === 'video/mp4') {
+      new ffmpeg({ source: videosDestination + file.filename })
+        .withAspect('16:9')
+        .withFps(90)
+        .setDuration(2)
+        .toFormat('gif')
+        .on('error', (err) => console.log('error', err))
+        .on('end', (err) => {
+          if (!err) return console.log('conversion done');
+        })
+        .saveToFile(gifsDestination + dateTime);
+    }
+    await VideoModel.create({
+      videoUrl: file.filename,
+      gifUrl: dateTime,
+      author: mongodb.ObjectId(profileId)
+    });
+    res.json(file);
   };
 
   likeVideo = async (req, res) => {
@@ -70,7 +93,6 @@ class VideoController {
 
   getLikedVideos = async (req, res) => {
     const user = req.user;
-    // const likedvideos = await LikeModel.find({ profileId: user._id });
     const result = await LikeModel.aggregate([
       {
         $lookup: {
@@ -86,6 +108,51 @@ class VideoController {
       }
     ]);
     res.json(result);
+  };
+
+  getPostedVideo = async (req, res) => {
+    const user = req.user;
+    const result = await VideoModel.aggregate([
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'video'
+        }
+      },
+      {
+        $project: {
+          gifUrl: 1,
+          author: 1
+        }
+      },
+      { $match: { author: mongoose.Types.ObjectId(user._id) } }
+    ]);
+    res.json(result);
+  };
+
+  getOtherVideos = async (req, res) => {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'profile invalid' });
+    const profile = await VideoModel.aggregate([
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'video'
+        }
+      },
+      {
+        $project: {
+          gifUrl: 1,
+          author: 1
+        }
+      },
+      { $match: { author: mongoose.Types.ObjectId(id) } }
+    ]);
+    res.json(profile);
   };
 }
 export default new VideoController();

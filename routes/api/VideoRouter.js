@@ -4,7 +4,6 @@ import CommentController from '../../app/controllers/CommentController.js';
 import slugify from 'slugify';
 import multer from 'multer';
 import { isAuth } from '../../app/auth/auth.method.js';
-
 const whitelist = ['image/png', 'image/jpeg', 'image/jpg', 'video/mp4'];
 
 const storage = multer.diskStorage({
@@ -30,6 +29,8 @@ const upload = multer({ storage, fileFilter });
 export const router = expess.Router();
 router.get('/', VideoController.getVideos);
 router.get('/likedvideo', isAuth, VideoController.getLikedVideos);
+router.get('/postedvideo', isAuth, VideoController.getPostedVideo);
+router.get('/:id', VideoController.getOtherVideos);
 router.post('/:id/like', isAuth, VideoController.likeVideo);
 router.get('/:id/comments', CommentController.getComments);
 router.post('/', isAuth, upload.single('uploaded_file'), VideoController.uploadVideo);
