@@ -57,6 +57,7 @@ class VideoController {
 
   uploadVideo = async (req, res) => {
     const file = req.file;
+    const desc = req.body.desc;
     const dateTime = Date.now() + '.gif';
     const profileId = req.user._id;
     if (file.mimetype === 'video/mp4') {
@@ -74,9 +75,10 @@ class VideoController {
     await VideoModel.create({
       videoUrl: file.filename,
       gifUrl: dateTime,
+      desc: desc,
       author: mongodb.ObjectId(profileId)
     });
-    res.json(file);
+    res.json({ status: 'success' });
   };
 
   likeVideo = async (req, res) => {
