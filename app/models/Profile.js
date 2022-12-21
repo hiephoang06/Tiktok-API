@@ -7,7 +7,8 @@ const userProfile = new Schema({
   nickName: String,
   uniqueId: String,
   userID: String,
-  provider: String
+  provider: String,
+  bio: String | undefined
 });
 
 export default mongoose.model('Profile', userProfile);

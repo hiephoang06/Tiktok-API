@@ -84,9 +84,20 @@ class ProfileController {
   };
 
   getFollowing = async (req, res) => {
-    const id = req.params.id;
-    const following = await FollowModel.distinct('followerId', { followingId: id });
-    const result = await ProfileModel.find({ _id: { $in: following } });
+    const profileId = req.params.id;
+    const id = req.user.id;
+    const followingsId = await FollowModel.distinct('followerId', { followingId: profileId });
+    const following = await ProfileModel.find({ _id: { $in: followingsId } });
+
+    const result = await Promise.all(
+      following.map(async (p) => {
+        return {
+          profile: p,
+          isFollowMe: (await FollowModel.count({ followerId: id, followingId: p._id })) == 1,
+          isFollowing: (await FollowModel.count({ followerId: p._id, followingId: id })) == 1
+        };
+      })
+    );
 
     res.json(result);
   };
@@ -110,19 +121,38 @@ class ProfileController {
   };
 
   getFollower = async (req, res) => {
-    const id = req.params.id;
-    const follower = await FollowModel.distinct('followingId', { followerId: id });
-    const result = await ProfileModel.find({ _id: { $in: follower } });
+    const profileId = req.params.id;
+    const id = req.user.id;
+    const followersId = await FollowModel.distinct('followingId', { followerId: profileId });
+    const followers = await ProfileModel.find({ _id: { $in: followersId } });
+
+    const result = await Promise.all(
+      followers.map(async (p) => {
+        return {
+          profile: p,
+          isFollowMe: (await FollowModel.count({ followerId: id, followingId: p._id })) == 1,
+          isFollowing: (await FollowModel.count({ followerId: p._id, followingId: id })) == 1
+        };
+      })
+    );
 
     res.json(result);
   };
 
   editProfile = async (req, res) => {
     const id = req.user._id;
-    const { avatarLarger, nickName, uniqueId } = req.body;
+    const { nickName, uniqueId, bio } = req.body;
 
-    await ProfileModel.findOneAndUpdate({ _id: id }, { avatarLarger, nickName, uniqueId });
+    await ProfileModel.findOneAndUpdate({ _id: id }, { nickName, uniqueId, bio });
 
+    res.json({ status: true });
+  };
+
+  editAvatar = async (req, res) => {
+    const file = req.file;
+    const id = req.user._id;
+
+    await ProfileModel.findOneAndUpdate({ _id: id }, { avatarLarger: file.filename });
     res.json({ status: true });
   };
 }

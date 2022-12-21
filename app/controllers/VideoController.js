@@ -10,6 +10,7 @@ const videosDestination = './public/videos/';
 const gifsDestination = './public/gifs/';
 class VideoController {
   getVideos = async (req, res) => {
+    const page = req.query.page || 1;
     const videos = await VideoModel.aggregate([
       {
         $lookup: {
@@ -41,6 +42,7 @@ class VideoController {
           videoUrl: 1,
           gifUrl: 1,
           author: 1,
+          desc: 1,
           likeCount: {
             $size: '$likes'
           },
@@ -49,7 +51,9 @@ class VideoController {
           }
         }
       },
-      { $sample: { size: 10 } }
+      { $sample: { size: 50 } },
+      { $skip: page * 5 },
+      { $limit: 5 }
     ]);
 
     res.json(videos);
@@ -64,7 +68,7 @@ class VideoController {
       new ffmpeg({ source: videosDestination + file.filename })
         .withAspect('16:9')
         .withFps(90)
-        .setDuration(2)
+        .setDuration(1)
         .toFormat('gif')
         .on('error', (err) => console.log('error', err))
         .on('end', (err) => {
@@ -94,7 +98,8 @@ class VideoController {
   };
 
   getLikedVideos = async (req, res) => {
-    const user = req.user;
+    const user = req.user._id;
+
     const result = await LikeModel.aggregate([
       {
         $lookup: {
@@ -106,31 +111,112 @@ class VideoController {
       },
       { $unwind: '$videoId' },
       {
-        $match: { profileId: user._id }
+        $match: { profileId: user }
+      },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'videoId.author',
+          foreignField: '_id',
+          as: 'author'
+        }
+      },
+      { $unwind: '$author' },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: 'videoId._id',
+          foreignField: 'videoId',
+          as: 'likes'
+        }
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: 'videoId._id',
+          foreignField: 'videoId',
+          as: 'comments'
+        }
+      },
+      {
+        $group: {
+          _id: '$videoId._id',
+          videoUrl: { $first: '$videoId.videoUrl' },
+          gifUrl: { $first: '$videoId.gifUrl' },
+          author: { $first: '$author' },
+          likes: { $first: '$likes' },
+          comments: { $first: '$comments' },
+          updatedAt: { $first: '$updatedAt' }
+        }
+      },
+      {
+        $sort: { updatedAt: -1 }
+      },
+      {
+        $project: {
+          _id: 1,
+          videoUrl: 1,
+          gifUrl: 1,
+          author: 1,
+          updatedAt: 1,
+          likeCount: {
+            $size: '$likes'
+          },
+          commentCount: {
+            $size: '$comments'
+          }
+        }
       }
     ]);
+
     res.json(result);
   };
 
   getPostedVideo = async (req, res) => {
-    const user = req.user;
+    const id = req.user._id;
     const result = await VideoModel.aggregate([
+      { $match: { author: mongoose.Types.ObjectId(id) } },
       {
         $lookup: {
           from: 'profiles',
           localField: 'author',
           foreignField: '_id',
-          as: 'video'
+          as: 'author'
         }
       },
       {
-        $project: {
-          gifUrl: 1,
-          author: 1
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'likes'
         }
       },
-      { $match: { author: mongoose.Types.ObjectId(user._id) } }
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'comments'
+        }
+      },
+      { $unwind: '$author' },
+      {
+        $project: {
+          _id: 1,
+          videoUrl: 1,
+          gifUrl: 1,
+          author: 1,
+          likeCount: {
+            $size: '$likes'
+          },
+          commentCount: {
+            $size: '$comments'
+          }
+        }
+      }
     ]);
+
     res.json(result);
   };
 

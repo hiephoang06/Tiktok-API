@@ -3,6 +3,7 @@ import { router as ProfileRouter } from './ProfileRouter.js';
 import { router as VideoRouter } from './VideoRouter.js';
 import { router as LoginRouter } from './LoginRouter.js';
 import { router as CommentRouter } from './CommentRouter.js';
+import { router as ChatRouter } from './ChatRouter.js';
 import ProfileController from '../../app/controllers/ProfileController.js';
 export const ApiRouters = express.Router();
 
@@ -12,3 +13,4 @@ ApiRouters.use('/profiles', ProfileController.getProfiles);
 ApiRouters.use('/video', VideoRouter);
 ApiRouters.use('/login', LoginRouter);
 ApiRouters.use('/comment', CommentRouter);
+ApiRouters.use('/chat', ChatRouter);

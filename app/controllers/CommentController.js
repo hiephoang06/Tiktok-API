@@ -20,7 +20,7 @@ class CommentController {
           from: 'profiles',
           localField: 'profileId',
           foreignField: '_id',
-          as: 'profile',
+          as: 'author',
           pipeline: [
             {
               $project: {
@@ -31,7 +31,7 @@ class CommentController {
           ]
         }
       },
-      { $unwind: '$profile' }
+      { $unwind: '$author' }
     ]);
 
     res.json(comments);

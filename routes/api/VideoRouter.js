@@ -6,7 +6,7 @@ import multer from 'multer';
 import { isAuth } from '../../app/auth/auth.method.js';
 const whitelist = ['image/png', 'image/jpeg', 'image/jpg', 'video/mp4'];
 
-const storage = multer.diskStorage({
+export const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     if (file.mimetype === 'video/mp4') return cb(null, './public/videos');
     return cb(null, './public/images');
@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req, file, cb) => {
+export const fileFilter = (req, file, cb) => {
   if (!whitelist.includes(file.mimetype)) {
     return cb(new Error('file is not allowed'));
   }

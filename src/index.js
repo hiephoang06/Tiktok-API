@@ -8,10 +8,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { connect } from '../config/db/index.js';
 import { routes } from '../routes/index.js';
-
+import { SocketIO } from './socket/index.js';
+import { createServer } from 'http';
 const app = express();
 const port = 3000;
-
+const server = createServer(app);
 dotenv.config();
 
 app.use(cors());
@@ -31,12 +32,14 @@ app.use(
   })
 );
 
+SocketIO(server);
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 connect();
 routes(app);
 
-app.listen(3000, () => {
+server.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
