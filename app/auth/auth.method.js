@@ -63,7 +63,7 @@ export const isAuth = async (req, res, next) => {
     req.user = checkExist;
     return next();
   } catch (error) {
-    return res.status(401).send({ message: 'Có lỗi xảy ra, vui lòng thử lại sau' });
+    return res.status(401).send({ message: 'Unauthorized' });
   }
 };
 
@@ -86,7 +86,19 @@ export const postInfo = async (req, res, next) => {
   // SECRET decode => compare
   const { userID, name: displayName, imgURL, provider } = req.body;
 
-  const checkExist = await ProfileModel.findOne({ userID: userID }, { avatarLarger: 1, nickName: 1, userID: 1 });
+  const checkExist = await ProfileModel.findOne(
+    { userID: userID },
+    { avatarLarger: 1, nickName: 1, userID: 1, bio: 1, uniqueId: 1 }
+  );
+  const dataForAccessToken = {
+    nickName: displayName,
+    userID: userID
+  };
+
+  const accessTokenLife = process.env.ACCESS_TOKEN_LIFE;
+  const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+  const accessToken = await generateToken(dataForAccessToken, accessTokenSecret, accessTokenLife);
+
   if (!checkExist) {
     const uniqueName = 'user' + makeId(11);
     const result = await ProfileModel.create({
@@ -96,14 +108,9 @@ export const postInfo = async (req, res, next) => {
       uniqueId: uniqueName,
       provider
     });
-  }
-  const dataForAccessToken = {
-    nickName: displayName,
-    userID: userID
-  };
 
-  const accessTokenLife = process.env.ACCESS_TOKEN_LIFE;
-  const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
-  const accessToken = await generateToken(dataForAccessToken, accessTokenSecret, accessTokenLife);
-  return res.json({ accessToken });
+    return res.json({ accessToken, profile: result });
+  }
+
+  return res.json({ accessToken, profile: checkExist });
 };
