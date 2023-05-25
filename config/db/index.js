@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
-export const connect = () => {
+export const connect = async () => {
   try {
-    const url = 'mongodb+srv://kugon_2001:minhHiep1009@cluster0.ggrhtyq.mongodb.net/tiktok_dev?retryWrites=true&w=majority';
-    mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
+    const url = 'mongodb://127.0.0.1:27017/tiktok_dev';
+    await mongoose.connect(url);
     console.log('connect success');
   } catch (e) {
     console.log('connect failed', e);

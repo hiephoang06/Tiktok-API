@@ -33,4 +33,5 @@ router.get('/postedvideo', isAuth, VideoController.getPostedVideo);
 router.get('/:id', VideoController.getOtherVideos);
 router.post('/:id/like', isAuth, VideoController.likeVideo);
 router.get('/:id/comments', CommentController.getComments);
+router.get('/:uniqueId/:videoId',VideoController.getDetailVideo);
 router.post('/', isAuth, upload.single('uploaded_file'), VideoController.uploadVideo);

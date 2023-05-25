@@ -30,6 +30,7 @@ export const strategyGG = () => {
             uniqueId: uniqueName,
             provider
           });
+          console.log(profile);
           return done(null, result);
         }
         return done(null, checkExist);
@@ -38,7 +39,7 @@ export const strategyGG = () => {
   );
 };
 
-function makeId(length) {
+export function makeId(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var charactersLength = characters.length;

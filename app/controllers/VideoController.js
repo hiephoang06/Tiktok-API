@@ -144,6 +144,7 @@ class VideoController {
           videoUrl: { $first: '$videoId.videoUrl' },
           gifUrl: { $first: '$videoId.gifUrl' },
           author: { $first: '$author' },
+          desc: { $first: '$videoId.desc' },
           likes: { $first: '$likes' },
           comments: { $first: '$comments' },
           updatedAt: { $first: '$updatedAt' }
@@ -159,6 +160,7 @@ class VideoController {
           gifUrl: 1,
           author: 1,
           updatedAt: 1,
+          desc: 1,
           likeCount: {
             $size: '$likes'
           },
@@ -207,6 +209,7 @@ class VideoController {
           videoUrl: 1,
           gifUrl: 1,
           author: 1,
+          desc: 1,
           likeCount: {
             $size: '$likes'
           },
@@ -222,25 +225,146 @@ class VideoController {
 
   getOtherVideos = async (req, res) => {
     const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'profile invalid' });
-    const profile = await VideoModel.aggregate([
+    const result = await VideoModel.aggregate([
+      { $match: { author: mongoose.Types.ObjectId(id) } },
       {
         $lookup: {
           from: 'profiles',
           localField: 'author',
           foreignField: '_id',
-          as: 'video'
+          as: 'author'
+        }
+      },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'likes'
+        }
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'comments'
+        }
+      },
+      { $unwind: '$author' },
+      {
+        $project: {
+          _id: 1,
+          videoUrl: 1,
+          gifUrl: 1,
+          author: 1,
+          desc: 1,
+          likeCount: {
+            $size: '$likes'
+          },
+          commentCount: {
+            $size: '$comments'
+          }
+        }
+      }
+    ]);
+
+    res.json(result);
+  };
+  getDetailVideo = async (req, res) => {
+    const page = req.query.page || 1;
+    const videoId = req.params.videoId;
+    const video = await VideoModel.aggregate([
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author'
+        }
+      },
+      { $unwind: '$author' },
+      {
+        $match: { _id: mongoose.Types.ObjectId(videoId) }
+      },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'likes'
+        }
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'comments'
         }
       },
       {
         $project: {
+          videoUrl: 1,
           gifUrl: 1,
-          author: 1
+          author: 1,
+          desc: 1,
+          likeCount: {
+            $size: '$likes'
+          },
+          commentCount: {
+            $size: '$comments'
+          }
+        }
+      }
+    ]);
+
+    const videos = await VideoModel.aggregate([
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author'
         }
       },
-      { $match: { author: mongoose.Types.ObjectId(id) } }
+      { $unwind: '$author' },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'likes'
+        }
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'comments'
+        }
+      },
+      {
+        $project: {
+          videoUrl: 1,
+          gifUrl: 1,
+          author: 1,
+          desc: 1,
+          likeCount: {
+            $size: '$likes'
+          },
+          commentCount: {
+            $size: '$comments'
+          }
+        }
+      },
+      { $sample: { size: 50 } },
+      { $skip: page * 5 },
+      { $limit: 5 }
     ]);
-    res.json(profile);
+
+    res.json([...video, ...videos]);
   };
 }
 export default new VideoController();

@@ -10,18 +10,26 @@ import { connect } from '../config/db/index.js';
 import { routes } from '../routes/index.js';
 import { SocketIO } from './socket/index.js';
 import { createServer } from 'http';
+import { strategyFB } from '../app/auth/StrategyFB.js';
+
+import   { strategyGG } from '../app/auth/StrategyGG.js'
+
 const app = express();
-const port = 3000;
+const port = 3001;
 const server = createServer(app);
 dotenv.config();
 
-app.use(cors());
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(path.dirname(__dirname), 'public')));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+strategyGG();
+strategyFB();
 
 app.use(
   session({
@@ -32,6 +40,11 @@ app.use(
   })
 );
 
+app.use(cors({ 
+  origin: 'http://localhost:3000',
+  methods:"GET,POST,PUT,PATCH,DELETE",
+  credentials:true }
+  ));
 SocketIO(server);
 
 app.use(passport.initialize());
@@ -41,5 +54,5 @@ connect();
 routes(app);
 
 server.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Example run on port: http://localhost:${port}`);
 });

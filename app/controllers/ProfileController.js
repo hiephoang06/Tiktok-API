@@ -5,6 +5,7 @@ import LikeModel from '../models/Like.js';
 import mongoose from 'mongoose';
 import Like from '../models/Like.js';
 import { ObjectId } from 'mongodb';
+
 class ProfileController {
   getProfiles = async (req, res) => {
     const profiles = await ProfileModel.find();
@@ -155,5 +156,16 @@ class ProfileController {
     await ProfileModel.findOneAndUpdate({ _id: id }, { avatarLarger: file.filename });
     res.json({ status: true });
   };
+  
+  getDetailsProfile = async(req,res) => {
+    const id = req.params?.id;
+    const [profile] = await Promise.all([
+      ProfileModel.findById(id),
+    ]);
+    res.json({profile});
+  }
 }
+
+
+
 export default new ProfileController();

@@ -2,13 +2,15 @@ import { Server } from 'socket.io';
 import { verifyToken } from '../../app/auth/auth.method.js';
 import ProfileModel from '../../app/models/Profile.js';
 export const SocketIO = (server) => {
-  const io = new Server(server);
+  const io = new Server(server, { cors: { origin: '*' } });
   const arr = [];
 
   io.on('connection', async (socket) => {
     const user = await isAuthSocket(socket);
     arr[user._id] = socket.id;
+    console.log(user._id, socket.id)
     socket.on('send_message', (data) => {
+      console.log(data)
       socket.to(arr[data.receiver]).emit('new_message', data);
     });
 

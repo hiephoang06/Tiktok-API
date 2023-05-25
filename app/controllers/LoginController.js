@@ -2,17 +2,17 @@ import ProfileModel from '../models/Profile.js';
 import { loginToken } from '../auth/auth.method.js';
 class LoginController {
   login = async (req, res, next) => {
-    const { userID, name, imgURL, provider } = req.body;
+    const { userID, name, imgURL } = req.body;
     const checkExist = await ProfileModel.findOne({ userID }, { avatarLarger: 1, nickName: 1, userID: 1 });
     if (!checkExist) {
       const uniqueName = 'user' + makeId(11);
-      const result = await ProfileModel.create({
+      await ProfileModel.create({
         userID,
         avatarLarger: imgURL,
         nickName: name,
         uniqueId: uniqueName,
-        provider
       });
+      res.json({ status: 'success' });
     }
   };
 }

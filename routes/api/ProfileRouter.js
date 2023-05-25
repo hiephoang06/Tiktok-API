@@ -14,6 +14,7 @@ router.get('/follower', isAuth, ProfileController.getFollowerAuth);
 router.get('/follower/:id', isAuth, ProfileController.getFollower);
 router.get('/auth/:id', isAuth, ProfileController.getProfileAuth);
 router.get('/:id', ProfileController.getProfile);
+router.get('/details/:id', ProfileController.getDetailsProfile);
 router.post('/:id', isAuth, ProfileController.followUser);
-router.patch('/', isAuth, ProfileController.editProfile);
+router.patch('/', isAuth, ProfileController.editProfile); 
 router.patch('/avatar', isAuth, upload.single('uploaded_file'), ProfileController.editAvatar);

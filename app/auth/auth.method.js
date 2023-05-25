@@ -84,17 +84,17 @@ export const loginToken = async (req, res, next) => {
 
 export const postInfo = async (req, res, next) => {
   // SECRET decode => compare
-  const { userID, name: displayName, imgURL, provider } = req.body;
+  const { userID, name, imgURL } = req.body;
 
   const checkExist = await ProfileModel.findOne(
     { userID: userID },
     { avatarLarger: 1, nickName: 1, userID: 1, bio: 1, uniqueId: 1 }
   );
   const dataForAccessToken = {
-    nickName: displayName,
+    nickName: name,
     userID: userID
   };
-
+ 
   const accessTokenLife = process.env.ACCESS_TOKEN_LIFE;
   const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
   const accessToken = await generateToken(dataForAccessToken, accessTokenSecret, accessTokenLife);
@@ -104,9 +104,8 @@ export const postInfo = async (req, res, next) => {
     const result = await ProfileModel.create({
       userID,
       avatarLarger: imgURL,
-      nickName: displayName,
+      nickName: name,
       uniqueId: uniqueName,
-      provider
     });
 
     return res.json({ accessToken, profile: result });
